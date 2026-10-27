@@ -65,6 +65,7 @@ input[type=range]{flex:1;min-width:120px}
       <div class="rotulo" id="rotulo"></div>
       <div class="guia" id="guia"></div>
       <canvas class="ventana" id="ventana" hidden></canvas>
+      <canvas id="figura" hidden style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
       <div class="hud"><span id="nivel">Nivel: —</span><span id="hudGps">GPS —</span></div>
       <div class="sub" id="sub" hidden>El Pianista repite una misma frase, como si quisiera decirle algo.</div>
     </div>
@@ -76,6 +77,15 @@ input[type=range]{flex:1;min-width:120px}
       <button class="btn2" id="volver">Volver a alinear</button>
     </div>
     <div class="estado mal" id="errCam" hidden></div>
+    <div class="caja" style="display:flex;flex-direction:column;gap:8px">
+      <div class="eti">Prueba de figura recortada (opción B del puente)</div>
+      <button class="btn2" id="btnFig">Mostrar figura</button>
+      <div id="ajFig" hidden style="display:flex;flex-direction:column;gap:6px">
+        <div class="fila"><button class="btn2" data-a="x-">←</button><button class="btn2" data-a="x+">→</button><button class="btn2" data-a="y-">↑</button><button class="btn2" data-a="y+">↓</button><button class="btn2" data-a="h+">Mayor</button><button class="btn2" data-a="h-">Menor</button></div>
+        <div style="font:600 13px/1.3 ui-monospace,Menlo,monospace" id="valFig"></div>
+        <p style="font-size:12px;color:var(--gris)">Si la figura no pisa bien la acera, muévala hasta que quede creíble y mándeme una captura con estos números.</p>
+      </div>
+    </div>
   </section>
 
   <p style="font-size:12px;color:var(--gris)">Prueba técnica: ubicación, cámara, alineación y vídeo dentro del cristal. El vídeo es provisional (animación sepia); en el juego será el café de los años 40 con el Pianista.</p>
@@ -208,6 +218,63 @@ input[type=range]{flex:1;min-width:120px}
     g.fillStyle=vg; g.fillRect(0,0,W,H);
     anim = requestAnimationFrame(dibujar);
   }
+
+  // ---------- Figura recortada (prueba opción B) ----------
+  const FIG = {x:0.30, y:0.655, h:0.19};   // pies (centro) y altura, en la foto 3:4
+  const fc = $('figura'), fg = fc.getContext('2d');
+  let figOn = false, figAnim = 0, figT0 = 0;
+  function figTamano(){ const r=fc.getBoundingClientRect(), d=window.devicePixelRatio||1; fc.width=Math.round(r.width*d); fc.height=Math.round(r.height*d); }
+  function figValores(){ $('valFig').textContent = `x ${FIG.x.toFixed(3)} · y ${FIG.y.toFixed(3)} · altura ${FIG.h.toFixed(3)}`; }
+  function dibFig(){
+    const W=fc.width, H=fc.height, t=(performance.now()-figT0)/1000, a=Math.min(1,t/1.5);
+    fg.clearRect(0,0,W,H);
+    const px=FIG.x*W, py=FIG.y*H, h=FIG.h*H, u=h/100, sw=Math.sin(t*1.6)*u*0.4;
+    fg.globalAlpha=a;
+    // sombra en el suelo
+    let sg=fg.createRadialGradient(px+u*6,py,1,px+u*6,py,u*26); sg.addColorStop(0,'rgba(0,0,0,.45)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+    fg.save(); fg.scale(1,0.25); fg.fillStyle=sg; fg.beginPath(); fg.arc(px+u*6,py*4,u*26,0,7); fg.fill(); fg.restore();
+    const coat='#5d5752', dark='#2a2522', skin='#c9b49a';
+    // piernas y zapatos
+    fg.fillStyle='#3b342f'; fg.fillRect(px-u*7,py-u*20,u*4.5,u*19); fg.fillRect(px+u*2.5,py-u*20,u*4.5,u*19);
+    fg.fillStyle=dark; fg.fillRect(px-u*8.5,py-u*2.5,u*7,u*2.5); fg.fillRect(px+u*1.5,py-u*2.5,u*7,u*2.5);
+    // abrigo largo
+    fg.fillStyle=coat; fg.beginPath();
+    fg.moveTo(px-u*10+sw,py-u*80); fg.lineTo(px+u*10+sw,py-u*80); fg.lineTo(px+u*15,py-u*19); fg.lineTo(px-u*15,py-u*19); fg.closePath(); fg.fill();
+    // cuello de piel
+    fg.fillStyle='#8a7d70'; fg.beginPath(); fg.ellipse(px+sw,py-u*80,u*11,u*4,0,0,7); fg.fill();
+    // cinturón
+    fg.fillStyle=dark; fg.fillRect(px-u*12+sw*.6,py-u*56,u*24,u*2.2);
+    // brazo derecho (de la figura) caído; brazo izquierdo levantado con boquilla
+    fg.strokeStyle=coat; fg.lineCap='round'; fg.lineWidth=u*5;
+    fg.beginPath(); fg.moveTo(px-u*10+sw,py-u*76); fg.lineTo(px-u*13,py-u*48); fg.stroke();
+    fg.beginPath(); fg.moveTo(px+u*10+sw,py-u*76); fg.lineTo(px+u*14,py-u*60); fg.lineTo(px+u*8+sw,py-u*72); fg.stroke();
+    fg.fillStyle=skin; fg.beginPath(); fg.arc(px+u*8+sw,py-u*72,u*2.2,0,7); fg.fill();
+    fg.strokeStyle='#111'; fg.lineWidth=u*0.8; fg.beginPath(); fg.moveTo(px+u*8+sw,py-u*72); fg.lineTo(px+u*14+sw,py-u*76); fg.stroke();
+    // humo
+    fg.strokeStyle='rgba(235,230,220,.35)'; fg.lineWidth=u*1.2; fg.beginPath();
+    for(let k=0;k<14;k++){ const yy=py-u*(77+k*2.2), xx=px+u*14+sw+Math.sin(t*2+k*.6)*u*(1+k*.25); k?fg.lineTo(xx,yy):fg.moveTo(xx,yy); } fg.stroke();
+    // cabeza y sombrero
+    fg.fillStyle=skin; fg.beginPath(); fg.ellipse(px+sw,py-u*88,u*5,u*6.5,0,0,7); fg.fill();
+    fg.fillStyle='#a8343a'; fg.fillRect(px-u*1.6+sw,py-u*84.3,u*3.2,u*0.9);
+    fg.fillStyle=dark; fg.beginPath(); fg.ellipse(px+sw,py-u*93,u*10,u*2.2,-0.12,0,7); fg.fill();
+    fg.beginPath(); fg.ellipse(px+sw+u*0.5,py-u*96,u*5.5,u*3.5,-0.12,0,7); fg.fill();
+    // tono sepia y grano leve
+    fg.globalCompositeOperation='source-atop'; fg.fillStyle='rgba(120,90,50,.18)'; fg.fillRect(0,0,W,H); fg.globalCompositeOperation='source-over';
+    fg.globalAlpha=1;
+    figAnim = requestAnimationFrame(dibFig);
+  }
+  $('btnFig').addEventListener('click', ()=>{
+    figOn = !figOn; fc.hidden = !figOn; $('ajFig').hidden = !figOn;
+    $('btnFig').textContent = figOn ? 'Ocultar figura' : 'Mostrar figura';
+    cancelAnimationFrame(figAnim);
+    if(figOn){ figTamano(); figT0=performance.now(); figValores(); dibFig(); }
+  });
+  document.querySelectorAll('#ajFig [data-a]').forEach(b=>b.addEventListener('click',()=>{
+    const a=b.dataset.a, d=0.005;
+    if(a==='x-') FIG.x-=d; if(a==='x+') FIG.x+=d; if(a==='y-') FIG.y-=d; if(a==='y+') FIG.y+=d;
+    if(a==='h+') FIG.h*=1.05; if(a==='h-') FIG.h/=1.05; figValores();
+  }));
+  window.addEventListener('resize', ()=>{ if(figOn) figTamano(); });
 
   // MI-RE-LA-SOL-LA (provisional, tono de piano sintético)
   function melodia(){
