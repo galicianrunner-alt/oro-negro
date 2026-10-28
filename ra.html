@@ -184,7 +184,33 @@ input[type=range]{flex:1;min-width:120px}
   $('repetir').addEventListener('click', melodia);
 
   // Animación provisional: interior de café en sepia con el Pianista de espaldas
+  // Imagen del café (cafe.jpg, 2:1). Si no carga, se usa la animación provisional.
+  const cafe = new Image(); let cafeOk = false;
+  cafe.onload = ()=>{ cafeOk = true; }; cafe.src = 'cafe.jpg';
+  function dibujarCafe(){
+    const W=cv.width, H=cv.height, t=(performance.now()-t0)/1000, fade=Math.min(1,t/1.2);
+    g.globalAlpha=1; g.clearRect(0,0,W,H); g.globalAlpha=fade;
+    // recorte: se conserva el alto y se elige el tramo horizontal (deja al Pianista y a Greta dentro)
+    const iw=cafe.naturalWidth, ih=cafe.naturalHeight, ar=W/H;
+    let sw=ih*ar, sh=ih, sx, sy=0;
+    if(sw>iw){ sw=iw; sh=iw/ar; sy=(ih-sh)/2; sx=0; }
+    else { const centro=0.54*iw; sx=Math.max(0,Math.min(iw-sw, centro-sw/2)); }
+    const z=1+0.015*Math.sin(t*0.25);                 // respiración muy lenta de la imagen
+    const dw=W*z, dh=H*z;
+    g.drawImage(cafe, sx, sy, sw, sh, (W-dw)/2, (H-dh)/2, dw, dh);
+    // humo que se mueve
+    for(let k=0;k<3;k++){ const x=W*(0.25+0.3*k)+Math.sin(t*0.3+k)*W*0.05, y=H*(0.35+0.1*Math.sin(t*0.2+k*2));
+      const rg=g.createRadialGradient(x,y,1,x,y,W*0.25); rg.addColorStop(0,'rgba(240,225,200,.10)'); rg.addColorStop(1,'rgba(240,225,200,0)');
+      g.fillStyle=rg; g.fillRect(0,0,W,H); }
+    // grano y parpadeo de película
+    g.globalAlpha=fade*0.10; for(let k=0;k<220;k++){ g.fillStyle=Math.random()<.5?'#fff':'#000'; g.fillRect(Math.random()*W,Math.random()*H,1.5,1.5); }
+    g.globalAlpha=fade*(0.03+0.04*Math.random()); g.fillStyle='#000'; g.fillRect(0,0,W,H);
+    g.globalAlpha=fade; const vg=g.createRadialGradient(W/2,H/2,Math.min(W,H)*.3,W/2,H/2,Math.max(W,H)*.75); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.45)');
+    g.fillStyle=vg; g.fillRect(0,0,W,H);
+    anim = requestAnimationFrame(dibujar);
+  }
   function dibujar(){
+    if(cafeOk) return dibujarCafe();
     const W=cv.width, H=cv.height, t=(performance.now()-t0)/1000;
     const fade = Math.min(1, t/1.2);
     g.globalAlpha = 1; g.clearRect(0,0,W,H); g.globalAlpha = fade;
