@@ -206,6 +206,7 @@ input[type=range]{flex:1;min-width:120px}
   let anim = 0, t0 = 0, actx = null, completo = false;
   function abrirVentana(pantallaCompleta){
     completo = pantallaCompleta;
+    try{ vcafe.currentTime = 0; const pr = vcafe.play(); if(pr) pr.catch(()=>{}); }catch(_){}
     const v = $('ventana');
     if(completo){ v.style.left='0'; v.style.top='0'; v.style.width='100%'; v.style.height='100%'; $('guia').hidden=true; $('rotulo').hidden=true; }
     else { colocarGuias(); $('guia').hidden=true; $('rotulo').hidden=true; }
@@ -229,19 +230,27 @@ input[type=range]{flex:1;min-width:120px}
   // Imagen del café (cafe.jpg, 2:1). Si no carga, se usa la animación provisional.
   const cafe = new Image(); let cafeOk = false;
   cafe.onload = ()=>{ cafeOk = true; }; cafe.src = 'cafe.jpg';
+  // Vídeo del café (cafe_v1.mp4, bucle ida y vuelta). Si no carga, se usa la imagen fija.
+  const vcafe = document.createElement('video');
+  vcafe.src = 'cafe_v1.mp4'; vcafe.muted = true; vcafe.loop = true; vcafe.playsInline = true; vcafe.preload = 'auto';
+  vcafe.setAttribute('playsinline',''); vcafe.setAttribute('muted','');
+  vcafe.addEventListener('loadeddata', ()=>{ cafeOk = true; });
+  const videoListo = ()=> vcafe.readyState >= 2 && vcafe.videoWidth > 0;
   function dibujarCafe(){
     const W=cv.width, H=cv.height, t=(performance.now()-t0)/1000, fade=Math.min(1,t/1.2);
     g.globalAlpha=1; g.clearRect(0,0,W,H); g.globalAlpha=fade;
     // recorte: se conserva el alto y se elige el tramo horizontal (deja al Pianista y a Greta dentro)
-    const iw=cafe.naturalWidth, ih=cafe.naturalHeight, ar=W/H;
+    const usaV = videoListo(), src = usaV ? vcafe : cafe;
+    const iw = usaV ? vcafe.videoWidth : cafe.naturalWidth, ih = usaV ? vcafe.videoHeight : cafe.naturalHeight, ar=W/H;
+    if(!iw){ anim = requestAnimationFrame(dibujar); return; }
     let sw=ih*ar, sh=ih, sx, sy=0;
     if(sw>iw){ sw=iw; sh=iw/ar; sy=(ih-sh)/2; sx=0; }
     else { const centro=0.54*iw; sx=Math.max(0,Math.min(iw-sw, centro-sw/2)); }
-    const z=1+0.015*Math.sin(t*0.25);                 // respiración muy lenta de la imagen
+    const z = usaV ? 1 : 1+0.015*Math.sin(t*0.25);    // con imagen fija: respiración muy lenta
     const dw=W*z, dh=H*z;
-    g.drawImage(cafe, sx, sy, sw, sh, (W-dw)/2, (H-dh)/2, dw, dh);
+    g.drawImage(src, sx, sy, sw, sh, (W-dw)/2, (H-dh)/2, dw, dh);
     // humo que se mueve
-    for(let k=0;k<3;k++){ const x=W*(0.25+0.3*k)+Math.sin(t*0.3+k)*W*0.05, y=H*(0.35+0.1*Math.sin(t*0.2+k*2));
+    if(!usaV) for(let k=0;k<3;k++){ const x=W*(0.25+0.3*k)+Math.sin(t*0.3+k)*W*0.05, y=H*(0.35+0.1*Math.sin(t*0.2+k*2));
       const rg=g.createRadialGradient(x,y,1,x,y,W*0.25); rg.addColorStop(0,'rgba(240,225,200,.10)'); rg.addColorStop(1,'rgba(240,225,200,0)');
       g.fillStyle=rg; g.fillRect(0,0,W,H); }
     // grano y parpadeo de película
