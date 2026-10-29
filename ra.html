@@ -247,8 +247,15 @@ input[type=range]{flex:1;min-width:120px}
     if(sw>iw){ sw=iw; sh=iw/ar; sy=(ih-sh)/2; sx=0; }
     else { const centro=0.54*iw; sx=Math.max(0,Math.min(iw-sw, centro-sw/2)); }
     const z = usaV ? 1 : 1+0.015*Math.sin(t*0.25);    // con imagen fija: respiración muy lenta
-    const dw=W*z, dh=H*z;
-    g.drawImage(src, sx, sy, sw, sh, (W-dw)/2, (H-dh)/2, dw, dh);
+    if(completo){
+      // «Ver sin alinear»: imagen entera (sin recortar) centrada, con bandas oscuras arriba y abajo
+      g.fillStyle='#0d0b09'; g.fillRect(0,0,W,H);
+      const k=Math.min(W/iw, H/ih)*z, dw2=iw*k, dh2=ih*k;
+      g.drawImage(src, 0, 0, iw, ih, (W-dw2)/2, (H-dh2)/2, dw2, dh2);
+    } else {
+      const dw=W*z, dh=H*z;
+      g.drawImage(src, sx, sy, sw, sh, (W-dw)/2, (H-dh)/2, dw, dh);
+    }
     // humo que se mueve
     if(!usaV) for(let k=0;k<3;k++){ const x=W*(0.25+0.3*k)+Math.sin(t*0.3+k)*W*0.05, y=H*(0.35+0.1*Math.sin(t*0.2+k*2));
       const rg=g.createRadialGradient(x,y,1,x,y,W*0.25); rg.addColorStop(0,'rgba(240,225,200,.10)'); rg.addColorStop(1,'rgba(240,225,200,0)');
