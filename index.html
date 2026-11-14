@@ -3,20 +3,121 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Operación Oro Negro · pruebas</title>
+<meta name="theme-color" content="#1f1b16">
+<title>Operación Oro Negro</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-body{margin:0;background:#f4f1ea;color:#1f1b16;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.pag{max-width:480px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:12px}
-h1{font:700 24px/1.2 Georgia,serif;margin:0}
-a{display:block;padding:16px;border-radius:8px;background:#1f1b16;color:#fff;text-decoration:none;font-weight:600}
-p{color:#5a544a;margin:0}
+:root{
+  --papel:#f4f1ea; --tinta:#1f1b16; --oxido:#9a4a12; --gris:#5a544a; --borde:#cfc7b6; --crema:#ebe5d8;
+  --oscuro:#2b2620; --oscuro-txt:#e8e1d0; --oscuro-sub:#a69e8e;
+  --ok-bg:#dcebdd; --ok:#165322; --mal-bg:#fbe3df; --mal:#7a1711; --av-bg:#fde8d2; --av:#8a4b00;
+  --pista-bg:#fff6dc; --pista:#8a6a10; --guia:#f0a040; --guia-ok:#5fd17a;
+  --serif:Georgia,"Times New Roman",serif; --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--sans);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+html.oscuro,html.oscuro body{background:#111}
+#barra{position:sticky;top:0;z-index:900;display:flex;align-items:center;gap:8px;background:var(--tinta);color:#fff;padding:calc(8px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left))}
+#barra .t{flex:1;font:600 12px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:#d8cfbd}
+#barra button{background:#3a342c;color:#fff;border:0;border-radius:6px;padding:8px 11px;font:600 13px/1 var(--sans)}
+#app{max-width:480px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
+.eti{font:600 11px/1.2 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--gris)}
+h1{font:700 26px/1.2 var(--serif);margin:0}
+h2{font:700 21px/1.25 var(--serif);margin:0}
+p{margin:0}
+.serif{font-family:var(--serif)}
+.cita{font:400 16px/1.55 var(--serif)}
+.cita b{font-weight:700}
+.btn{display:block;width:100%;font:600 16px/1 var(--sans);padding:15px;border-radius:8px;border:0;background:var(--tinta);color:#fff;cursor:pointer;text-align:center}
+.btn:disabled{opacity:.35}
+.btn.sec{background:#fff;color:var(--tinta);border:1.5px solid var(--tinta)}
+.btn.osc{background:#4a443c}
+.btn2{font:600 14px/1 var(--sans);padding:10px 12px;border-radius:6px;border:1px solid var(--tinta);background:#fff;color:var(--tinta);cursor:pointer}
+.enlace{background:none;border:0;color:var(--oxido);font:600 15px/1.2 var(--sans);text-decoration:underline;cursor:pointer;padding:6px 0;text-align:left}
+.fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.caja{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:12px 14px}
+.prov{border:2px dashed #8d867a;border-radius:8px;padding:14px;background:#ece7dc;color:#4a443c;font-size:13px;line-height:1.4;min-height:90px;display:flex;align-items:center;justify-content:center;text-align:center}
+.prov.osc{background:#3a352f;color:#e8e1d0;border-color:#8d867a}
+.voz{display:flex;gap:10px;align-items:center;border:2px dashed #8d867a;border-radius:8px;padding:10px 12px;background:#ece7dc;font-size:13px}
+.voz span{flex:1}
+.chip{display:inline-block;font:600 13px/1.2 var(--sans);padding:7px 11px;border-radius:999px;border:1px solid var(--borde);background:#fff}
+.chip.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.chip.warn{background:var(--av-bg);color:var(--av);border-color:var(--av)}
+.aviso{border-radius:8px;padding:12px 14px;border:1.5px solid}
+.aviso b{display:block;font:600 12px/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.aviso.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.aviso.mal{background:var(--mal-bg);border-color:var(--mal);color:var(--mal)}
+.aviso.av{background:var(--av-bg);border-color:var(--av);color:var(--av)}
+.aviso.neutro{background:#fff;border-color:var(--borde);color:var(--gris)}
+.pistas{background:var(--pista-bg);border:1.5px solid #c9a54a;border-radius:8px;padding:12px 14px}
+.pistas .eti{color:var(--pista)}
+.pistas ol{margin:6px 0 0;padding-left:20px;font:400 15px/1.5 var(--serif)}
+.mi6{background:var(--oscuro);color:var(--oscuro-txt);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.mi6 .eti{color:var(--oscuro-sub)}
+.lista-num{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.lista-num li{display:flex;gap:10px}
+.lista-num li i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--tinta);color:#fff;font:600 12px/22px var(--sans);text-align:center;font-style:normal}
+input[type=text]{font:600 20px/1 var(--mono);letter-spacing:.06em;padding:12px;border:1.5px solid var(--tinta);border-radius:6px;width:100%;background:#fff;color:var(--tinta);text-transform:uppercase}
+.opcion{display:flex;gap:10px;align-items:center;padding:13px;border:1.5px solid var(--borde);border-radius:8px;background:#fff;font-size:15px;cursor:pointer}
+.opcion.sel{border-color:var(--tinta);background:var(--crema)}
+.opcion i{width:18px;height:18px;border-radius:50%;border:2px solid var(--tinta);flex:none}
+.opcion.sel i{background:radial-gradient(circle,var(--tinta) 45%,transparent 50%)}
+.mapa{height:300px;border-radius:8px;overflow:hidden;border:1px solid var(--borde)}
+.datos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.datos div{background:#fff;border:1px solid var(--borde);border-radius:6px;padding:10px 12px}
+.datos b{display:block;font:700 20px/1.2 var(--sans)}
+.cred{background:#fbf8f0;border:1.6px solid var(--tinta);border-radius:8px;padding:12px;display:grid;grid-template-columns:110px 1fr;gap:12px}
+.cred .foto{height:140px;border:2px dashed #8d867a;border-radius:4px;display:flex;align-items:center;justify-content:center;background:#ece7dc}
+.cred .foto svg{width:70%;height:auto}
+.clave{font:700 28px/1 var(--serif);color:var(--oxido);letter-spacing:.06em}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#e6e0d4;border-radius:999px;padding:4px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:10px 0;font:600 14px/1 var(--sans);color:var(--gris)}
+.seg button.on{background:var(--tinta);color:#fff}
+/* Visor de cámara (falsa RA) */
+.visor{position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:10px;overflow:hidden}
+.visor video.cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.visor canvas{position:absolute;pointer-events:none}
+.guia{position:absolute;border:3px dashed var(--guia);touch-action:none}
+.guia.ok{border-color:var(--guia-ok);border-style:solid}
+.guia i{position:absolute;width:26px;height:26px;background:var(--guia);border-radius:50%;border:3px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.6)}
+.guia i.a{left:-15px;top:-15px}.guia i.b{right:-15px;top:-15px}.guia i.c{left:-15px;bottom:-15px}.guia i.d{right:-15px;bottom:-15px}
+.dintel{position:absolute;left:0;right:0;border-top:2px dashed var(--guia);pointer-events:none}
+.etq{position:absolute;font:600 11px/1 var(--sans);color:#fff;background:rgba(0,0,0,.55);padding:4px 6px;border-radius:4px;pointer-events:none}
+.hud{position:absolute;left:8px;top:8px;right:8px;display:flex;justify-content:space-between;pointer-events:none}
+.hud span{font:600 12px/1 var(--sans);color:#fff;background:rgba(0,0,0,.55);padding:6px 8px;border-radius:4px}
+.sub{position:absolute;left:10px;right:10px;bottom:12px;text-align:center;color:#fff;font:italic 16px/1.35 var(--serif);text-shadow:0 1px 3px #000;pointer-events:none}
+/* Rotor */
+.rotor{background:var(--oscuro);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.rotor .cuerpo{display:grid;grid-template-columns:repeat(3,1fr) 76px;gap:8px}
+.rueda{display:flex;flex-direction:column;align-items:center;gap:4px}
+.flecha{width:100%;height:36px;border:1px solid #6b6357;background:#3a342c;color:#e8e1d0;border-radius:6px;font-size:15px}
+.tambor{width:100%;background:var(--crema);border-radius:6px;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:none;user-select:none}
+.tambor .v{font:400 16px/1 var(--serif);color:#a39b8a;height:18px}
+.tambor .l{width:84%;height:52px;background:#fff;border:2px solid #8d867a;border-radius:4px;display:grid;place-items:center;font:700 28px/1 var(--serif)}
+.nums{background:#fff;border:1.6px solid var(--tinta);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly}
+.nums b{font:600 26px/1 var(--mono);min-height:28px;transition:opacity .2s}
+.nums b.oc{opacity:0}
+.estado{display:flex;align-items:center;gap:8px;font:600 14px/1.2 var(--sans);color:#e8e1d0}
+.piloto{width:12px;height:12px;border-radius:50%;background:#8d867a;flex:none}
+/* Modal */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;align-items:flex-end;justify-content:center}
+#modal .hoja{background:var(--papel);width:100%;max-width:480px;max-height:85vh;overflow:auto;border-radius:14px 14px 0 0;padding:18px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:12px}
+.inv{display:flex;flex-direction:column;gap:8px}
+.inv div{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:10px 12px}
+.inv div b{display:block}
+.peq{font-size:13px;color:var(--gris)}
+.oscuro-app #app{color:var(--oscuro-txt)}
+[hidden]{display:none!important}
+button:focus-visible,input:focus-visible{outline:3px solid var(--oxido);outline-offset:2px}
 </style>
 </head>
 <body>
-<div class="pag">
-  <h1>Operación Oro Negro</h1>
-  <p>Banco de pruebas en GitHub (cámara, ubicación y micrófono).</p>
-  <a href="ra.html">1 · Falsa RA · escaparate Salotto</a>
-</div>
+<div id="barra" hidden><span class="t" id="barraT">Oro Negro</span><button id="bMapa">Mapa</button><button id="bInv">Inventario</button></div>
+<main id="app"></main>
+<div id="modal" hidden><div class="hoja" id="modalHoja"></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="contenido.js?v=1"></script>
+<script src="juego.js?v=1"></script>
 </body>
 </html>
