@@ -21,7 +21,7 @@ function nuevaPartida() {
   S = {
     id, version: CONFIG.VERSION,
     clave: NOMBRES_CLAVE[Math.floor(Math.random() * NOMBRES_CLAVE.length)],
-    silueta: 'hombre', pantalla: 'P1', etapa: 0,
+    silueta: 'hombre', pantalla: 'P2', etapa: 0, historial: [],
     inventario: [], cuaderno: [], fallos: {}, pistas: {},
     permisos: {}, inicio: Date.now(), vistoApertura: !!(S && S.vistoApertura),
   };
@@ -151,12 +151,20 @@ const dentro = (p, lugar) => p && distancia(p, lugar) <= CONFIG.RADIO_GEOVALLA +
 let limpiezas = [];
 function alSalir(f) { limpiezas.push(f); }
 function limpiar() { limpiezas.forEach(f => { try { f(); } catch (_) {} }); limpiezas = []; timersMelodia.forEach(clearTimeout); timersMelodia = []; try { speechSynthesis.cancel(); } catch (_) {} }
-function ir(id) {
+function ir(id, opc) {
+  if (id === 'E4_1') id = 'FIN1';
   limpiar();
+  S.historial = S.historial || [];
+  const vengoDe = S.pantalla;
+  if (!(opc && opc.atras) && vengoDe && vengoDe !== id && !/^P[12]$/.test(id) && vengoDe !== 'P1') {
+    S.historial.push(vengoDe); if (S.historial.length > 60) S.historial.shift();
+    try { history.pushState({ oro: 1 }, ''); } catch (_) {}
+  }
   S.pantalla = id; if (!/^P[12]$/.test(id)) S.pantallaGuardada = id; guardar();
   const f = PANT[id] || PANT.P2;
   const enPresentacion = /^P(1|2)$/.test(id);
   $('barra').hidden = enPresentacion;
+  $('bAtras').hidden = !S.historial.length;
   const m = id.match(/^E(\d+)|^R(\d+)/);
   $('barraT').textContent = m ? 'Oro Negro · Etapa ' + (m[1] || m[2]) : (id === 'FIN1' ? 'Oro Negro' : 'Oro Negro · Presentación');
   document.documentElement.classList.toggle('oscuro', id === 'P1');
@@ -195,6 +203,16 @@ function crearMapa(div, destino, conRuta) {
   setTimeout(() => m.invalidateSize(), 200);
   return m;
 }
+
+/* ================= VOLVER ATRÁS ================= */
+function atras() {
+  if (!$('modal').hidden) { $('mCerrar').click(); return; }
+  const prev = S.historial && S.historial.pop();
+  ir(prev || 'P2', { atras: true });
+}
+$('bAtras').onclick = () => atras();
+// La flecha «atrás» del móvil o del navegador también retrocede dentro del juego
+window.addEventListener('popstate', () => atras());
 
 /* ================= MODALES: mapa e inventario ================= */
 function modal(html, alAbrir) {
@@ -843,7 +861,6 @@ PANT.E3_7 = () => {
 };
 
 /* ---------- Fin de la fase 1 (las etapas 4-10 llegarán en las fases 2 y 3) ---------- */
-PANT.E4_1 = () => ir('FIN1');
 PANT.FIN1 = () => {
   pinta(`
     <span class="eti">Versión de prueba · fase 1</span><h1>Ha llegado a la Plazuela del Pozo</h1>
