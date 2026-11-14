@@ -316,13 +316,15 @@ PANT.P2 = () => { // Portada
     <p>${esc(TXT.portada)}</p>
     <button class="btn" id="empezar">Empezar</button>
     <button class="btn osc" id="seguir" ${hay ? '' : 'disabled'}>Continuar partida</button>
-    ${hay ? `<p class="peq">Partida guardada: agente ${esc(S.clave)}, etapa ${S.etapa || 0}.</p>` : ''}`);
+    ${hay ? `<p class="peq">Partida guardada: agente ${esc(S.clave)}, etapa ${S.etapa || 0}.</p>` : ''}
+    <button class="enlace" id="intro" style="text-align:center">Ver la introducción</button>`);
   on('empezar', () => {
     audio();
     if (hay && !confirmarNueva()) return;
     nuevaPartida(); ir('P3');
   });
   on('seguir', () => { audio(); ir(S.pantallaGuardada); });
+  on('intro', () => { audio(); ir('P1'); });
 };
 function confirmarNueva() { return true; } // (la portada solo ofrece «Continuar» si hay partida; «Empezar» crea una nueva)
 
@@ -878,6 +880,5 @@ document.addEventListener('visibilitychange', noApagar); document.addEventListen
 
 if (!S) { nuevaPartida(); S.pantalla = 'P1'; }
 if (S.permisos && S.permisos.ubicacion) iniciarGPS();
-// Al abrir: primera vez → apertura; si ya hay partida → portada con «Continuar partida».
-ir(S.vistoApertura ? 'P2' : 'P1');
+ir('P1');   // siempre empieza con la introducción («Saltar ›» lleva a la portada)
 })();

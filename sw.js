@@ -2,7 +2,7 @@
    Permite instalar el juego en el móvil y evita el problema de caché:
    siempre intenta descargar la versión nueva; solo si no hay conexión
    usa la copia guardada. Al publicar cambios, sube el número de VERSION. */
-const VERSION = 'oro-negro-2';
+const VERSION = 'oro-negro-4';
 const BASICOS = ['./', './index.html', './contenido.js', './juego.js', './manifest.json', './icono.svg'];
 
 self.addEventListener('install', e => {
